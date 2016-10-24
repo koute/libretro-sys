@@ -1,0 +1,14 @@
+[package]
+name = "libretro-sys"
+version = "0.1.0"
+authors = ["Jan Bujak <j@exia.io>"]
+license = "MIT"
+readme = "README.md"
+repository = "https://github.com/koute/libretro-sys"
+homepage = "https://github.com/koute/libretro-sys"
+description = """
+Raw libretro API bindings for Rust
+"""
+
+[dependencies]
+"libc" = "0.2"
