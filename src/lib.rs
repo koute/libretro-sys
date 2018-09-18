@@ -29,6 +29,7 @@ macro_rules! define_enum {
             $( $( $( #[$variant_attr:meta] )* $variant:ident ),+ = $value:expr ),+,
         }
     ) => {
+        #[allow(non_camel_case_types)]
         $( #[$enum_attr] )*
         pub enum $typename {
             $( $( $( #[$variant_attr] )* $variant ),+ = $value ),+,
