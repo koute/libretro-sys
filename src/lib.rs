@@ -1992,33 +1992,33 @@ pub struct CoreAPI {
     //
     // The rest of the set_* functions are guaranteed to have been called
     // before the first call to retro_run() is made.
-    retro_set_environment: unsafe extern "C" fn(callback: EnvironmentFn),
-    retro_set_video_refresh: unsafe extern "C" fn(callback: VideoRefreshFn),
-    retro_set_audio_sample: unsafe extern "C" fn(callback: AudioSampleFn),
-    retro_set_audio_sample_batch: unsafe extern "C" fn(callback: AudioSampleBatchFn),
-    retro_set_input_poll: unsafe extern "C" fn(callback: InputPollFn),
-    retro_set_input_state: unsafe extern "C" fn(callback: InputStateFn),
+    pub retro_set_environment: unsafe extern "C" fn(callback: EnvironmentFn),
+    pub retro_set_video_refresh: unsafe extern "C" fn(callback: VideoRefreshFn),
+    pub retro_set_audio_sample: unsafe extern "C" fn(callback: AudioSampleFn),
+    pub retro_set_audio_sample_batch: unsafe extern "C" fn(callback: AudioSampleBatchFn),
+    pub retro_set_input_poll: unsafe extern "C" fn(callback: InputPollFn),
+    pub retro_set_input_state: unsafe extern "C" fn(callback: InputStateFn),
 
     // Library global initialization/deinitialization.
-    retro_init: unsafe extern "C" fn(),
-    retro_deinit: unsafe extern "C" fn(),
+    pub retro_init: unsafe extern "C" fn(),
+    pub retro_deinit: unsafe extern "C" fn(),
 
     // Must return API_VERSION. Used to validate ABI compatibility
     // when the API is revised.
-    retro_api_version: unsafe extern "C" fn() -> libc::c_uint,
+    pub retro_api_version: unsafe extern "C" fn() -> libc::c_uint,
 
     // Gets statically known system info. Pointers provided in * info
     // must be statically allocated.
-    // Can be called at any time, even before retro_init().
-    retro_get_system_info: unsafe extern "C" fn(info: *mut SystemInfo),
+    // Can be called at any time, even before pub retro_init().
+    pub retro_get_system_info: unsafe extern "C" fn(info: *mut SystemInfo),
 
     // Gets information about system audio/video timings and geometry.
-    // Can be called only after retro_load_game() has successfully completed.
+    // Can be called only after pub retro_load_game() has successfully completed.
     // NOTE: The implementation of this function might not initialize every
     // variable if needed.
     // E.g. geom.aspect_ratio might not be initialized if core doesn't
     // desire a particular aspect ratio.
-    retro_get_system_av_info: unsafe extern "C" fn(info: *mut SystemAvInfo),
+    pub retro_get_system_av_info: unsafe extern "C" fn(info: *mut SystemAvInfo),
 
     // Sets device to be used for player 'port'.
     // By default, DEVICE_JOYPAD is assumed to be plugged into all
@@ -2028,50 +2028,50 @@ pub struct CoreAPI {
     // hint to the libretro core when a core cannot automatically detect the
     // appropriate input device type on its own. It is also relevant when a
     // core can change its behavior depending on device type.
-    retro_set_controller_port_device: unsafe extern "C" fn(port: libc::c_uint, device: libc::c_uint),
+    pub retro_set_controller_port_device: unsafe extern "C" fn(port: libc::c_uint, device: libc::c_uint),
 
     // Resets the current game.
-    retro_reset: unsafe extern "C" fn(),
+    pub retro_reset: unsafe extern "C" fn(),
 
     // Runs the game for one video frame.
-    // During retro_run(), input_poll callback must be called at least once.
+    // During pub retro_run(), input_poll callback must be called at least once.
     //
     // If a frame is not rendered for reasons where a game "dropped" a frame,
-    // this still counts as a frame, and retro_run() should explicitly dupe
+    // this still counts as a frame, and pub retro_run() should explicitly dupe
     // a frame if GET_CAN_DUPE returns true.
     // In this case, the video callback can take a NULL argument for data.
-    retro_run: unsafe extern "C" fn(),
+    pub retro_run: unsafe extern "C" fn(),
 
     // Returns the amount of data the implementation requires to serialize
     // internal state (save states).
     //
-    // Between calls to retro_load_game() and retro_unload_game(), the
+    // Between calls to pub retro_load_game() and retro_unload_game(), the
     // returned size is never allowed to be larger than a previous returned
     // value, to ensure that the frontend can allocate a save state buffer once.
-    retro_serialize_size: unsafe extern "C" fn() -> libc::size_t,
+    pub retro_serialize_size: unsafe extern "C" fn() -> libc::size_t,
 
     // Serializes internal state. If failed, or size is lower than
-    // retro_serialize_size(), it should return false, true otherwise.
-    retro_serialize: unsafe extern "C" fn(data: *mut libc::c_void, size: libc::size_t),
+    // pub retro_serialize_size(), it should return false, true otherwise.
+    pub retro_serialize: unsafe extern "C" fn(data: *mut libc::c_void, size: libc::size_t),
 
-    retro_unserialize: unsafe extern "C" fn(data: *const libc::c_void, size: libc::size_t) -> bool,
-    retro_cheat_reset: unsafe extern "C" fn(),
-    retro_cheat_set: unsafe extern "C" fn(index: libc::c_uint, enabled: bool, code: *const libc::c_char),
+    pub retro_unserialize: unsafe extern "C" fn(data: *const libc::c_void, size: libc::size_t) -> bool,
+    pub retro_cheat_reset: unsafe extern "C" fn(),
+    pub retro_cheat_set: unsafe extern "C" fn(index: libc::c_uint, enabled: bool, code: *const libc::c_char),
 
     // Loads a game.
-    retro_load_game: unsafe extern "C" fn(game: *const GameInfo) -> bool,
+    pub retro_load_game: unsafe extern "C" fn(game: *const GameInfo) -> bool,
 
     // Loads a "special" kind of game. Should not be used,
     // except in extreme cases.
-    retro_load_game_special: unsafe extern "C" fn(game_type: libc::c_uint, info: *const GameInfo, num_info: libc::size_t) -> bool,
+    pub retro_load_game_special: unsafe extern "C" fn(game_type: libc::c_uint, info: *const GameInfo, num_info: libc::size_t) -> bool,
 
     // Unloads a currently loaded game.
-    retro_unload_game: unsafe extern "C" fn(),
+    pub retro_unload_game: unsafe extern "C" fn(),
 
     // Gets region of game.
-    retro_get_region: unsafe extern "C" fn() -> libc::c_uint,
+    pub retro_get_region: unsafe extern "C" fn() -> libc::c_uint,
 
     // Gets region of memory.
-    retro_get_memory_data: unsafe extern "C" fn(id: libc::c_uint) -> *mut libc::c_void,
-    retro_get_memory_size: unsafe extern "C" fn(id: libc::c_uint) -> libc::size_t,
+    pub retro_get_memory_data: unsafe extern "C" fn(id: libc::c_uint) -> *mut libc::c_void,
+    pub retro_get_memory_size: unsafe extern "C" fn(id: libc::c_uint) -> libc::size_t,
 }
