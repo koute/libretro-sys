@@ -26,6 +26,7 @@ extern crate libc;
 pub const HW_RENDER_INTERFACE_VERSION: libc::c_uint = 5;
 pub const HW_RENDER_CONTEXT_NEGOTIATION_INTERFACE_VERSION: libc::c_uint = 1;
 
+#[derive(Clone, Debug)]
 #[repr(C)]
 pub struct Image {
     pub image_view: ash::vk::ImageView,
@@ -33,7 +34,7 @@ pub struct Image {
     pub create_info: ash::vk::ImageViewCreateInfo,
 }
 
-pub type SetImage = unsafe extern "C" fn(
+pub type SetImageFn = unsafe extern "C" fn(
     handle: *mut libc::c_void,
     image: *const Image,
     num_semaphores: u32,
@@ -41,21 +42,22 @@ pub type SetImage = unsafe extern "C" fn(
     src_queue_family: u32,
 );
 
-pub type GetSyncIndex = unsafe extern "C" fn(handle: *mut libc::c_void) -> u32;
-pub type GetSyncIndexMask = unsafe extern "C" fn(handle: *mut libc::c_void) -> u32;
-pub type SetCommandBuffers = unsafe extern "C" fn(
+pub type GetSyncIndexFn = unsafe extern "C" fn(handle: *mut libc::c_void) -> u32;
+pub type GetSyncIndexMaskFn = unsafe extern "C" fn(handle: *mut libc::c_void) -> u32;
+pub type SetCommandBuffersFn = unsafe extern "C" fn(
     handle: *mut libc::c_void,
     num_cmd: u32,
     cmd: *const ash::vk::CommandBuffer,
 );
-pub type WaitSyncIndex = unsafe extern "C" fn(handle: *mut libc::c_void);
-pub type LockQueue = unsafe extern "C" fn(handle: *mut libc::c_void);
-pub type UnlockQueue = unsafe extern "C" fn(handle: *mut libc::c_void);
-pub type SetSignalSemaphore =
+pub type WaitSyncIndexFn = unsafe extern "C" fn(handle: *mut libc::c_void);
+pub type LockQueueFn = unsafe extern "C" fn(handle: *mut libc::c_void);
+pub type UnlockQueueFn = unsafe extern "C" fn(handle: *mut libc::c_void);
+pub type SetSignalSemaphoreFn =
     unsafe extern "C" fn(handle: *mut libc::c_void, semaphore: ash::vk::Semaphore);
 
-pub type GetApplicationInfo = unsafe extern "C" fn() -> *const ash::vk::ApplicationInfo;
+pub type GetApplicationInfoFn = unsafe extern "C" fn() -> *const ash::vk::ApplicationInfo;
 
+#[derive(Clone, Debug)]
 #[repr(C)]
 pub struct Context {
     pub gpu: ash::vk::PhysicalDevice,
@@ -66,7 +68,7 @@ pub struct Context {
     pub presentation_queue_family_index: u32,
 }
 
-pub type CreateDevice = unsafe extern "C" fn(
+pub type CreateDeviceFn = unsafe extern "C" fn(
     context: *mut Context,
     instance: ash::vk::Instance,
     gpu: ash::vk::PhysicalDevice,
@@ -79,7 +81,7 @@ pub type CreateDevice = unsafe extern "C" fn(
     required_features: *const ash::vk::PhysicalDeviceFeatures,
 ) -> bool;
 
-pub type DestroyDevice = unsafe extern "C" fn();
+pub type DestroyDeviceFn = unsafe extern "C" fn();
 
 /* Note on thread safety:
  * The Vulkan API is heavily designed around multi-threading, and
@@ -88,6 +90,7 @@ pub type DestroyDevice = unsafe extern "C" fn();
  * command buffers to the GPU from any thread.
  */
 
+#[derive(Clone, Debug)]
 #[repr(C)]
 pub struct HwRenderContextNegotiationInterface {
     /* Must be set to HW_RENDER_CONTEXT_NEGOTIATION_INTERFACE. */
@@ -98,7 +101,7 @@ pub struct HwRenderContextNegotiationInterface {
     /* If non-NULL, returns a VkApplicationInfo struct that the frontend can use instead of
      * its "default" application info.
      */
-    get_application_info: GetApplicationInfo,
+    get_application_info: GetApplicationInfoFn,
 
     /* If non-NULL, the libretro core will choose one or more physical devices,
      * create one or more logical devices and create one or more queues.
@@ -125,7 +128,7 @@ pub struct HwRenderContextNegotiationInterface {
      * If false, none of the above have been initialized and the frontend will attempt
      * to fallback to "default" device creation, as if this function was never called.
      */
-    create_device: CreateDevice,
+    create_device: CreateDeviceFn,
 
     /* If non-NULL, this callback is called similar to context_destroy for HW_RENDER_INTERFACE.
      * However, it will be called even if context_reset was not called.
@@ -136,9 +139,10 @@ pub struct HwRenderContextNegotiationInterface {
      *
      * Only auxillary resources should be freed here, i.e. resources which are not part of retro_vulkan_context.
      */
-    destroy_device: DestroyDevice,
+    destroy_device: DestroyDeviceFn,
 }
 
+#[derive(Clone)]
 #[repr(C)]
 pub struct HwRenderInterface {
     /* Must be set to HW_RENDER_INTERFACE. */
@@ -292,7 +296,7 @@ pub struct HwRenderInterface {
      * Since the frontend releases ownership, we cannot necessarily dupe the frame because
      * the core needs to make the roundtrip of ownership transfer.
      */
-    pub set_image: SetImage,
+    pub set_image: SetImageFn,
 
     /* Get the current sync index for this frame which is obtained in
      * frontend by calling e.g. vkAcquireNextImageKHR before calling
@@ -326,7 +330,7 @@ pub struct HwRenderInterface {
      * VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT cannot
      * start until the frontend is done with the image.
      */
-    pub get_sync_index: GetSyncIndex,
+    pub get_sync_index: GetSyncIndexFn,
 
     /* Returns a bitmask of how many swapchain images we currently have
      * in the frontend.
@@ -343,7 +347,7 @@ pub struct HwRenderInterface {
      * is completely idle and all synchronization objects can be deleted
      * right away as desired.
      */
-    pub get_sync_index_mask: GetSyncIndexMask,
+    pub get_sync_index_mask: GetSyncIndexMaskFn,
 
     /* Instead of submitting the command buffer to the queue first, the core
      * can pass along its command buffer to the frontend, and the frontend
@@ -366,12 +370,12 @@ pub struct HwRenderInterface {
      *
      * The frontend must submit the command buffer before submitting any
      * other command buffers provided by set_command_buffers. */
-    pub set_command_buffers: SetCommandBuffers,
+    pub set_command_buffers: SetCommandBuffersFn,
 
     /* Waits on CPU for device activity for the current sync index to complete.
      * This is useful since the core will not have a relevant fence to sync with
      * when the frontend is submitting the command buffers. */
-    pub wait_sync_index: WaitSyncIndex,
+    pub wait_sync_index: WaitSyncIndexFn,
 
     /* If the core submits command buffers itself to any of the queues provided
      * in this interface, the core must lock and unlock the frontend from
@@ -382,8 +386,8 @@ pub struct HwRenderInterface {
      * the lock/unlock functions must still be called.
      *
      * NOTE: Queue submissions are heavy-weight. */
-    pub lock_queue: LockQueue,
-    pub unlock_queue: UnlockQueue,
+    pub lock_queue: LockQueueFn,
+    pub unlock_queue: UnlockQueueFn,
 
     /* Sets a semaphore which is signaled when the image in set_image can safely be reused.
      * The semaphore is consumed next call to retro_video_refresh_t.
@@ -394,5 +398,5 @@ pub struct HwRenderInterface {
      * This is mostly useful to support use cases where you're rendering to a single image that
      * is recycled in a ping-pong fashion with the frontend to save memory (but potentially less throughput).
      */
-    pub set_signal_semaphore: SetSignalSemaphore,
+    pub set_signal_semaphore: SetSignalSemaphoreFn,
 }
